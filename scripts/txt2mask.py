@@ -35,15 +35,16 @@ class Script(scripts.Script):
 		mask_prompt = gr.Textbox(label="Mask prompt", lines=1)
 		negative_mask_prompt = gr.Textbox(label="Negative mask prompt", lines=1)
 		mask_precision = gr.Slider(label="Mask precision", minimum=0.0, maximum=255.0, step=1.0, value=100.0)
+		neg_mask_precision = gr.Slider(label="Negative Mask precision", minimum=0.0, maximum=255.0, step=1.0, value=100.0)
 		mask_padding = gr.Slider(label="Mask padding", minimum=0.0, maximum=500.0, step=1.0, value=0.0)
 		brush_mask_mode = gr.Radio(label="Brush mask mode", choices=['discard','add','subtract'], value='discard', type="index", visible=False)
 		mask_output = gr.Checkbox(label="Show mask in output?",value=True)
 
 		plug = gr.HTML(label="plug",value='<div class="gr-block gr-box relative w-full overflow-hidden border-solid border border-gray-200 gr-panel"><p>If you like my work, please consider showing your support on <strong><a href="https://patreon.com/thereforegames" target="_blank">Patreon</a></strong>. Thank you! &#10084;</p></div>')
 
-		return [mask_prompt,negative_mask_prompt, mask_precision, mask_padding, brush_mask_mode, mask_output, plug]
+		return [mask_prompt,negative_mask_prompt, mask_precision, neg_mask_precision, mask_padding, brush_mask_mode, mask_output, plug]
 
-	def run(self, p, mask_prompt, negative_mask_prompt, mask_precision, mask_padding, brush_mask_mode, mask_output, plug):
+	def run(self, p, mask_prompt, negative_mask_prompt, mask_precision, neg_mask_precision, mask_padding, brush_mask_mode, mask_output, plug):
 		def download_file(filename, url):
 			with open(filename, 'wb') as fout:
 				response = requests.get(url, stream=True)
@@ -81,9 +82,13 @@ class Script(scripts.Script):
 				# TODO: Figure out how to convert the plot above to numpy instead of re-loading image
 				img = cv2.imread(filename)
 				gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-				(thresh, bw_image) = cv2.threshold(gray_image, mask_precision, 255, cv2.THRESH_BINARY)
+				
 
-				if (mode == 0): bw_image = numpy.invert(bw_image)
+				if (mode == 0): 
+					(thresh, bw_image) = cv2.threshold(gray_image, neg_mask_precision, 255, cv2.THRESH_BINARY)
+					bw_image = numpy.invert(bw_image)					
+				else:
+					(thresh, bw_image) = cv2.threshold(gray_image, mask_precision, 255, cv2.THRESH_BINARY)
 
 				if (debug):
 					print(f"bw_image: {bw_image}")
